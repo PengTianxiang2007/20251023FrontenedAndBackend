@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>玄机阁 - 算命</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Serif SC', serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: #e0e0e0;
+            background: linear-gradient(45deg, #12031a, #0d1a2f, #1a0a0e, #2a2a3e);
+            background-size: 400% 400%;
+            animation: gradientBG 3s ease infinite;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .shooting-star {
+            position: fixed;
+            width: 2px;
+            height: 2px;
+            background: white;
+            border-radius: 50%;
+            box-shadow: 0 0 10px 2px rgba(255, 255, 255, 0.5);
+            animation: shootingStar 0.3s linear infinite;
+            opacity: 0;
+        }
+
+        @keyframes shootingStar {
+            0% {
+                opacity: 1;
+                transform: translateX(0) translateY(0);
+            }
+            100% {
+                opacity: 0;
+                transform: translateX(-300px) translateY(300px);
+            }
+        }
+
+        #fireworks-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .firework {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            animation: fireworkExplosion 0.3s ease-out forwards;
+        }
+
+        @keyframes fireworkExplosion {
+            0% {
+                transform: translate(0, 0);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(var(--tx), var(--ty));
+                opacity: 0;
+            }
+        }
+
+        .star {
+            position: fixed;
+            width: 2px;
+            height: 2px;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle 0.3s infinite;
+            opacity: 0.3;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            position: relative;
+            z-index: 10;
+        }
+
+        .card {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 30px 40px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #f0e68c;
+            margin-bottom: 5px;
+            text-shadow: 0 0 20px rgba(240, 230, 140, 0.3);
+        }
+
+        .subtitle {
+            font-size: 1rem;
+            color: #b0b0b0;
+            margin-bottom: 30px;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+
+        .input-field {
+            flex: 1;
+            min-width: 200px;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: #fff;
+            font-family: inherit;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: #f0e68c;
+            box-shadow: 0 0 15px rgba(240, 230, 140, 0.2);
+        }
+
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            filter: invert(1);
+        }
+
+        .button {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            background: linear-gradient(45deg, #f0e68c, #c8b868);
+            color: #1a1a1a;
+            font-size: 1.1rem;
+            font-family: inherit;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 48px;
+        }
+
+        .button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(240, 230, 140, 0.5);
+        }
+
+        .button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .spinner {
+            border: 3px solid rgba(0, 0, 0, 0.1);
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border-left-color: #1a1a1a;
+            animation: spin 1s ease infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .result {
+            margin-top: 30px;
+            text-align: left;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+
+        .result.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .result h2 {
+            color: #f0e68c;
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 1.8rem;
+        }
+
+        .error-message {
+            color: #ff6b6b;
+            text-align: center;
+            background: rgba(255, 107, 107, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .result-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .result-item h3 {
+            margin: 0 0 15px 0;
+            color: #f0e68c;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 10px;
+            text-align: center;
+            font-size: 1.3rem;
+        }
+
+        .result-item p {
+            margin: 0;
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+
+        .bazi {
+            font-size: 1.8rem !important;
+            font-weight: 700;
+            letter-spacing: 8px;
+            text-align: center;
+            color: #fff;
+            text-shadow: 0 0 10px rgba(240, 230, 140, 0.5);
+        }
+
+        .elements {
+            display: flex;
+            justify-content: space-around;
+            align-items: flex-end;
+            min-height: 150px;
+            padding: 20px 0;
+        }
+
+        .element-bar {
+            width: 50px;
+            background: linear-gradient(to top, #c8b868, #f0e68c);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            border-radius: 5px 5px 0 0;
+            transition: all 0.5s ease;
+            color: #1a1a1a;
+            font-weight: bold;
+            box-shadow: 0 0 15px rgba(240, 230, 140, 0.3);
+        }
+
+        .element-bar:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 25px rgba(240, 230, 140, 0.5);
+        }
+
+        .element-bar .count {
+            padding-top: 8px;
+            font-size: 1.2rem;
+        }
+
+        .element-bar .label {
+            padding-bottom: 8px;
+            font-size: 1rem;
+        }
+
+        .highlight-text {
+            color: #f0e68c;
+            font-weight: bold;
+            font-size: 1.3rem;
+            text-shadow: 0 0 10px rgba(240, 230, 140, 0.5);
+        }
+
+        .center-text {
+            text-align: center;
+        }
+
+        .shensha-list {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .shensha-item {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 10px;
+            border-radius: 6px;
+            border-left: 3px solid #f0e68c;
+        }
+
+        .shensha-item.good {
+            border-left-color: #90ee90;
+        }
+
+        .shensha-item.bad {
+            border-left-color: #ff6b6b;
+        }
+
+        .shensha-name {
+            color: #f0e68c;
+            font-weight: bold;
+            font-size: 1.1rem;
+            margin-bottom: 5px;
+        }
+
+        .shensha-desc {
+            color: #b0b0b0;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        .shishen-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-top: 15px;
+        }
+
+        .shishen-item {
+            background: rgba(240, 230, 140, 0.1);
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid rgba(240, 230, 140, 0.2);
+        }
+
+        .shishen-name {
+            color: #f0e68c;
+            font-weight: bold;
+            font-size: 1.2rem;
+            margin-bottom: 5px;
+        }
+
+        .shishen-count {
+            color: #fff;
+            font-size: 1.4rem;
+            font-weight: bold;
+        }
+
+        .dayun-timeline {
+            margin-top: 15px;
+        }
+
+        .dayun-item {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            border-left: 3px solid #f0e68c;
+        }
+
+        .dayun-item.current {
+            background: rgba(240, 230, 140, 0.1);
+            border-left-color: #90ee90;
+        }
+
+        .dayun-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .dayun-pillar {
+            color: #f0e68c;
+            font-weight: bold;
+            font-size: 1.3rem;
+        }
+
+        .dayun-age {
+            color: #b0b0b0;
+            font-size: 0.9rem;
+        }
+
+        .dayun-desc {
+            color: #ccc;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        .advice-section {
+            background: linear-gradient(135deg, rgba(240, 230, 140, 0.1), rgba(200, 184, 104, 0.1));
+            border: 2px solid rgba(240, 230, 140, 0.3);
+        }
+
+        .advice-list {
+            margin-top: 15px;
+        }
+
+        .advice-item {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 12px 15px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            border-left: 3px solid #90ee90;
+            line-height: 1.6;
+        }
+
+        .advice-icon {
+            color: #f0e68c;
+            margin-right: 8px;
+            font-weight: bold;
+        }
+
+        .result-item small {
+            display: block;
+            margin-top: 15px;
+            color: #aaa;
+            font-size: 0.9rem;
+            text-align: center;
+            line-height: 1.5;
+        }
+
+        .footer {
+            position: fixed;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.8rem;
+            color: #888;
+            text-align: center;
+            z-index: 10;
+            max-width: 90%;
+        }
+
+        @media (max-width: 600px) {
+            .card {
+                padding: 20px 25px;
+            }
+            h1 {
+                font-size: 2rem;
+            }
+            .input-group {
+                flex-direction: column;
+            }
+            .input-field {
+                min-width: 100%;
+            }
+            .shensha-list, .shishen-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="stars-container"></div>
+    
+    <div class="shooting-star" style="top: 10%; left: 80%; animation-delay: 0s;"></div>
+    <div class="shooting-star" style="top: 30%; left: 90%; animation-delay: 2s;"></div>
+    <div class="shooting-star" style="top: 50%; left: 70%; animation-delay: 4s;"></div>
+    <div class="shooting-star" style="top: 20%; left: 60%; animation-delay: 6s;"></div>
+    
+    <div id="fireworks-container"></div>
+
+    <div id="app" class="container">
+        <div class="card">
+            <h1>玄机阁</h1>
+            <p class="subtitle">输入您的生辰，洞见五行玄机</p>
+            
+            <div class="input-group">
+                <input 
+                    type="date" 
+                    v-model="birthDate" 
+                    class="input-field"
+                    placeholder="选择出生日期">
+                <select v-model="birthHour" class="input-field">
+                    <option disabled value="">请选择出生时辰</option>
+                    <option v-for="hour in hours" :key="hour.value" :value="hour.value">
+                        {{ hour.label }}
+                    </option>
+                </select>
+            </div>
+
+            <button @click="calculate" :disabled="loading" class="button">
+                <span v-if="loading" class="spinner"></span>
+                <span v-else>开始测算</span>
+            </button>
+
+            <div v-if="error" class="error-message">
+                {{ error }}
+            </div>
+            
+            <div v-if="result" class="result" :class="{ show: result }">
+                <h2>您的命盘信息</h2>
+                
+                <div class="result-item">
+                    <h3>生辰八字</h3>
+                    <p class="bazi">{{ result.bazi }}</p>
+                </div>
+
+                <div class="result-item">
+                    <h3>纳音五行</h3>
+                    <p class="center-text">
+                        年柱纳音：<span class="highlight-text">{{ result.nayin }}</span>
+                    </p>
+                    <small>{{ result.nayin_desc }}</small>
+                </div>
+
+                <div class="result-item">
+                    <h3>五行分布</h3>
+                    <div class="elements">
+                        <div 
+                            v-for="(count, element) in result.five_elements" 
+                            :key="element"
+                            class="element-bar" 
+                            :style="{ height: Math.max(count * 25, 40) + 'px' }">
+                            <span class="count">{{ count }}</span>
+                            <span class="label">{{ element }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="result-item">
+                    <h3>十神格局</h3>
+                    <p class="center-text">
+                        命格：<span class="highlight-text">{{ result.shishen.pattern }}</span>
+                    </p>
+                    <div class="shishen-grid">
+                        <div v-for="(count, name) in result.shishen.distribution" :key="name" class="shishen-item" v-if="count > 0">
+                            <div class="shishen-name">{{ name }}</div>
+                            <div class="shishen-count">{{ count }}</div>
+                        </div>
+                    </div>
+                    <small>{{ result.shishen.description }}</small>
+                </div>
+
+                <div class="result-item">
+                    <h3>神煞星曜</h3>
+                    <div class="shensha-list">
+                        <div v-for="sha in result.shensha" :key="sha.name" 
+                             class="shensha-item" 
+                             :class="sha.type">
+                            <div class="shensha-name">{{ sha.name }}</div>
+                            <div class="shensha-desc">{{ sha.description }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="result-item">
+                    <h3>大运流年</h3>
+                    <p class="center-text">起运年龄：<span class="highlight-text">{{ result.dayun.start_age }}岁</span></p>
+                    <div class="dayun-timeline">
+                        <div v-for="yun in result.dayun.periods" :key="yun.start_age" 
+                             class="dayun-item"
+                             :class="{ current: yun.is_current }">
+                            <div class="dayun-header">
+                                <span class="dayun-pillar">{{ yun.pillar }}</span>
+                                <span class="dayun-age">{{ yun.start_age }}-{{ yun.end_age }}岁</span>
+                            </div>
+                            <div class="dayun-desc">{{ yun.description }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="result-item">
+                    <h3>天乙贵人</h3>
+                    <p class="center-text">您的天乙贵人属相为：<span class="highlight-text">{{ result.gui_ren }}</span></p>
+                    <small>当您遇到困难时，这些属相的人可能更容易向您伸出援手</small>
+                </div>
+
+                <div class="result-item advice-section">
+                    <h3>人生建议</h3>
+                    <div class="advice-list">
+                        <div v-for="(advice, index) in result.life_advice" :key="index" class="advice-item">
+                            <span class="advice-icon">✦</span>{{ advice }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>免责声明：本测算结果仅供娱乐参考，请勿用于重要决策</p>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+
+        function createStars() {
+            const container = document.getElementById('stars-container');
+            for (let i = 0; i < 50; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.animationDelay = Math.random() * 3 + 's';
+                container.appendChild(star);
+            }
+        }
+
+        function createFirework(x, y) {
+            const container = document.getElementById('fireworks-container');
+            const colors = ['#f0e68c', '#c8b868', '#ffd700', '#fff'];
+            const particles = 20;
+            
+            for (let i = 0; i < particles; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'firework';
+                particle.style.left = x + 'px';
+                particle.style.top = y + 'px';
+                particle.style.background = colors[Math.floor(Math.random() * colors.length)];
+                
+                const angle = (Math.PI * 2 * i) / particles;
+                const velocity = 50 + Math.random() * 50;
+                const tx = Math.cos(angle) * velocity;
+                const ty = Math.sin(angle) * velocity;
+                
+                particle.style.setProperty('--tx', tx + 'px');
+                particle.style.setProperty('--ty', ty + 'px');
+                
+                container.appendChild(particle);
+                
+                setTimeout(() => particle.remove(), 1500);
+            }
+        }
+
+        function randomFireworks() {
+            setInterval(() => {
+                if (Math.random() > 0.7) {
+                    const x = Math.random() * window.innerWidth;
+                    const y = Math.random() * window.innerHeight * 0.5;
+                    createFirework(x, y);
+                }
+            }, 3000);
+        }
+
+        createStars();
+        randomFireworks();
+
+        createApp({
+            data() {
+                return {
+                    birthDate: '',
+                    birthHour: '',
+                    hours: [
+                        { value: 23, label: '23:00 - 00:59 (子时)' },
+                        { value: 1, label: '01:00 - 02:59 (丑时)' },
+                        { value: 3, label: '03:00 - 04:59 (寅时)' },
+                        { value: 5, label: '05:00 - 06:59 (卯时)' },
+                        { value: 7, label: '07:00 - 08:59 (辰时)' },
+                        { value: 9, label: '09:00 - 10:59 (巳时)' },
+                        { value: 11, label: '11:00 - 12:59 (午时)' },
+                        { value: 13, label: '13:00 - 14:59 (未时)' },
+                        { value: 15, label: '15:00 - 16:59 (申时)' },
+                        { value: 17, label: '17:00 - 18:59 (酉时)' },
+                        { value: 19, label: '19:00 - 20:59 (戌时)' },
+                        { value: 21, label: '21:00 - 22:59 (亥时)' },
+                    ],
+                    result: null,
+                    loading: false,
+                    error: ''
+                };
+            },
+            methods: {
+                async calculate() {
+                    if (!this.birthDate || this.birthHour === '') {
+                        this.error = '请选择完整的出生日期和时辰';
+                        this.result = null;
+                        return;
+                    }
+                    
+                    this.loading = true;
+                    this.error = '';
+                    this.result = null;
+
+                    const [year, month, day] = this.birthDate.split('-');
+
+                    try {
+                        const response = await fetch('http://134.175.18.101:5000/calculate', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                year: parseInt(year),
+                                month: parseInt(month),
+                                day: parseInt(day),
+                                hour: this.birthHour
+                            })
+                        });
+
+                        if (!response.ok) {
+                            throw new Error('网络请求失败');
+                        }
+                        
+                        const data = await response.json();
+                        this.result = data;
+                        
+                        setTimeout(() => {
+                            for (let i = 0; i < 3; i++) {
+                                setTimeout(() => {
+                                    createFirework(
+                                        Math.random() * window.innerWidth,
+                                        Math.random() * window.innerHeight * 0.4
+                                    );
+                                }, i * 300);
+                            }
+                        }, 100);
+                        
+                    } catch (e) {
+                        this.error = '计算失败，请检查网络连接或稍后再试';
+                        console.error(e);
+                    } finally {
+                        this.loading = false;
+                    }
+                }
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
